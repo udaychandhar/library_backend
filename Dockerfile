@@ -1,14 +1,20 @@
-# Use official OpenJDK runtime as a parent image
-FROM openjdk:17-jdk-slim
-
-# Optional: Set a working directory inside the container
+# Use Maven builder image to compile
+FROM maven:3.8.6-openjdk-17 AS build
 WORKDIR /app
 
-# Copy the built jar file into the container
-COPY target/LibraryManagementSystem1-0.0.1-SNAPSHOT.jar app.jar
+# Copy source files
+COPY pom.xml .
+COPY src ./src
 
-# Expose the port your Spring Boot app runs on (default 8080)
+# Build the project and package jar
+RUN mvn clean package -DskipTests
+
+# Use a minimal JRE image for running
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+
+# Copy the jar from builder stage
+COPY --from=build /app/target/LibraryManagementSystem1-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8080
-
-# Command to run the jar file
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
