@@ -1,20 +1,13 @@
-# Use Maven builder image to compile
-FROM maven:3.8.6-openjdk-17 AS build
+# Stage 1: Build the JAR using Maven
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 WORKDIR /app
-
-# Copy source files
 COPY pom.xml .
 COPY src ./src
-
-# Build the project and package jar
 RUN mvn clean package -DskipTests
 
-# Use a minimal JRE image for running
+# Stage 2: Run the JAR
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-
-# Copy the jar from builder stage
-COPY --from=build /app/target/LibraryManagementSystem1-0.0.1-SNAPSHOT.jar app.jar
-
+COPY --from=builder /app/target/LibraryManagementSystem1-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
